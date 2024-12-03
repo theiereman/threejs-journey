@@ -1,16 +1,17 @@
 {
-  "name": "chapter-one",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "threejs-journey-exercise",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build"
   },
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "devDependencies": {
+    "vite": "^5.3.3",
+    "vite-plugin-restart": "^0.4.1"
+  },
   "dependencies": {
-    "three": "^0.171.0",
-    "vite": "^6.0.2"
+    "three": "^0.166.1"
   }
 }
