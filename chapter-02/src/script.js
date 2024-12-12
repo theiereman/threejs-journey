@@ -148,19 +148,75 @@ roof.position.y =
   houseMeasurements.wallHeight + houseMeasurements.roofHeight / 2;
 roof.rotation.y = Math.PI / 4;
 
+const doorColorTexture = textureLoader.load("./door/color.jpg");
+doorColorTexture.colorSpace = THREE.SRGBColorSpace;
+const doorAlphaTexture = textureLoader.load("./door/alpha.jpg");
+const doorAmbientOcclusionTexture = textureLoader.load(
+  "./door/ambientOcclusion.jpg"
+);
+const doorHeightTexture = textureLoader.load("./door/height.jpg");
+const doorNormalTexture = textureLoader.load("./door/normal.jpg");
+const doorMetalnessTexture = textureLoader.load("./door/metalness.jpg");
+const doorRoughnessTexture = textureLoader.load("./door/roughness.jpg");
+
 const door = new THREE.Mesh(
   new THREE.PlaneGeometry(
     houseMeasurements.doorTextureSize,
-    houseMeasurements.doorTextureSize
+    houseMeasurements.doorTextureSize,
+    100,
+    100
   ),
-  new THREE.MeshStandardMaterial({ color: 0xff0000 })
+  new THREE.MeshStandardMaterial({
+    map: doorColorTexture,
+    transparent: true,
+    alphaMap: doorAlphaTexture,
+    metalnessMap: doorMetalnessTexture,
+    roughnessMap: doorRoughnessTexture,
+    normalMap: doorNormalTexture,
+    aoMap: doorAmbientOcclusionTexture,
+    displacementMap: doorHeightTexture,
+    displacementScale: 0.15,
+    displacementBias: -0.04,
+  })
 );
 door.position.z = houseMeasurements.wallDepth / 2 + 0.01;
 door.position.y = houseMeasurements.doorTextureSize / 2;
 
 //random bushes
+
+const bushColorTexture = textureLoader.load(
+  "./bush/leaves_forest_ground_1k/leaves_forest_ground_diff_1k.jpg"
+);
+bushColorTexture.colorSpace = THREE.SRGBColorSpace;
+
+const bushArmTexture = textureLoader.load(
+  "./bush/leaves_forest_ground_1k/leaves_forest_ground_arm_1k.jpg"
+);
+const bushNormalTexture = textureLoader.load(
+  "./bush/leaves_forest_ground_1k/leaves_forest_ground_nor_gl_1k.jpg"
+);
+
+bushColorTexture.repeat.set(3, 3);
+bushArmTexture.repeat.set(3, 3);
+bushNormalTexture.repeat.set(3, 3);
+
+bushColorTexture.wrapS = THREE.RepeatWrapping;
+bushArmTexture.wrapS = THREE.RepeatWrapping;
+bushNormalTexture.wrapS = THREE.RepeatWrapping;
+
+bushColorTexture.wrapT = THREE.RepeatWrapping;
+bushArmTexture.wrapT = THREE.RepeatWrapping;
+bushNormalTexture.wrapT = THREE.RepeatWrapping;
+
 const bushGeometry = new THREE.SphereGeometry(1);
-const bushTexture = new THREE.MeshStandardMaterial();
+const bushTexture = new THREE.MeshStandardMaterial({
+  map: bushColorTexture,
+  normalMap: bushNormalTexture,
+  roughnessMap: bushArmTexture,
+  metalnessMap: bushArmTexture,
+  aoMap: bushArmTexture,
+  color: "#ccffcc",
+});
 
 for (let i = 0; i < 5; i++) {
   const bush = new THREE.Mesh(bushGeometry, bushTexture);
@@ -180,6 +236,7 @@ for (let i = 0; i < 5; i++) {
 
   bush.position.x = radius * Math.cos(angle);
   bush.position.z = radius * Math.sin(angle);
+  bush.position.y = 0.1 + Math.random() * 0.3;
 
   const bushScale = 0.6 + Math.random() * 0.2;
   bush.scale.set(bushScale, bushScale, bushScale);
@@ -188,9 +245,31 @@ for (let i = 0; i < 5; i++) {
 }
 
 //graves
+const graveColorTexture = textureLoader.load(
+  "./grave/plastered_stone_wall_1k/plastered_stone_wall_diff_1k.jpg"
+);
+graveColorTexture.colorSpace = THREE.SRGBColorSpace;
+
+const graveArmTexture = textureLoader.load(
+  "./grave/plastered_stone_wall_1k/plastered_stone_wall_arm_1k.jpg"
+);
+const graveNormalTexture = textureLoader.load(
+  "./grave/plastered_stone_wall_1k/plastered_stone_wall_nor_gl_1k.jpg"
+);
+
+graveColorTexture.repeat.set(0.3, 0.4);
+graveArmTexture.repeat.set(0.3, 0.4);
+graveNormalTexture.repeat.set(0.3, 0.4);
+
 const graves = new THREE.Group();
 const graveGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.2);
-const graveTexture = new THREE.MeshStandardMaterial();
+const graveTexture = new THREE.MeshStandardMaterial({
+  map: graveColorTexture,
+  aoMap: graveArmTexture,
+  roughnessMap: graveArmTexture,
+  metalnessMap: graveArmTexture,
+  normalMap: graveNormalTexture,
+});
 
 for (let i = 0; i <= 15; i++) {
   const grave = new THREE.Mesh(graveGeometry, graveTexture);
