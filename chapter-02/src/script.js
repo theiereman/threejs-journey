@@ -306,13 +306,23 @@ scene.add(decorGroup);
  * Lights
  */
 // Ambient light
-const ambientLight = new THREE.AmbientLight("#ffffff", 0.5);
+const ambientLight = new THREE.AmbientLight("#86cdff", 0.5);
 scene.add(ambientLight);
 
 // Directional light
-const directionalLight = new THREE.DirectionalLight("#ffffff", 1.5);
+const directionalLight = new THREE.DirectionalLight("#86cdff", 1.5);
 directionalLight.position.set(3, 2, -8);
 scene.add(directionalLight);
+
+const doorLight = new THREE.PointLight("#ff7d46", 10);
+doorLight.position.z = 2.38;
+doorLight.position.y = 2.38;
+decorGroup.add(doorLight);
+
+//ghosts
+const ghost = new THREE.PointLight("#86cdff", 6);
+ghost.position.y = 0.2;
+scene.add(ghost);
 
 /**
  * Sizes
@@ -373,6 +383,10 @@ const tick = () => {
   // Timer
   timer.update();
   const elapsedTime = timer.getElapsed();
+
+  ghost.position.x = Math.cos(elapsedTime * 0.2) * 5;
+  ghost.position.z = Math.sin(elapsedTime * 0.2) * 5;
+  ghost.position.y = 1 + Math.sin(elapsedTime * 3) * -Math.sin(elapsedTime);
 
   // Update controls
   controls.update();
