@@ -241,6 +241,9 @@ for (let i = 0; i < 5; i++) {
   const bushScale = 0.6 + Math.random() * 0.2;
   bush.scale.set(bushScale, bushScale, bushScale);
 
+  bush.castShadow = true;
+  bush.receiveShadow = true;
+
   decorGroup.add(bush);
 }
 
@@ -295,6 +298,9 @@ for (let i = 0; i <= 15; i++) {
   grave.rotation.y = (Math.random() - 0.5) * 0.2;
   grave.rotation.z = (Math.random() - 0.5) * 0.2;
 
+  grave.castShadow = true;
+  grave.receiveShadow = true;
+
   graves.add(grave);
 }
 
@@ -311,7 +317,7 @@ scene.add(ambientLight);
 
 // Directional light
 const directionalLight = new THREE.DirectionalLight("#86cdff", 1.5);
-directionalLight.position.set(3, 2, -8);
+directionalLight.position.set(3, 4, -8);
 scene.add(directionalLight);
 
 const doorLight = new THREE.PointLight("#ff7d46", 10);
@@ -373,6 +379,17 @@ const renderer = new THREE.WebGLRenderer({
 });
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+// Shadows
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+ghost.castShadow = true;
+
+directionalLight.castShadow = true;
+walls.castShadow = true;
+walls.receiveShadow = true;
+roof.castShadow = true;
+floor.receiveShadow = true;
 
 /**
  * Animate
