@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import GUI from "lil-gui";
+import gsap from "gsap";
 
 /**
  * Debug
@@ -86,6 +87,30 @@ window.addEventListener("resize", () => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
+//Particles
+const particlesCount = 400;
+const positions = new Float32Array(particlesCount * 3);
+
+for (let i = 0; i < particlesCount; i++) {
+  positions[i * 3] = (Math.random() - 0.5) * 10; //x
+  positions[i * 3 + 1] =
+    objectDistance / 2 - Math.random() * objectDistance * sectionMeshes.length; //y
+  positions[i * 3 + 2] = (Math.random() - 0.5) * 10; //z
+}
+
+const particlesGeometry = new THREE.BufferGeometry();
+particlesGeometry.setAttribute(
+  "position",
+  new THREE.BufferAttribute(positions, 3)
+);
+
+const particleMaterial = new THREE.PointsMaterial({
+  color: parameters.materialColor,
+  size: 0.02,
+});
+const points = new THREE.Points(particlesGeometry, particleMaterial);
+scene.add(points);
+
 /**
  * Camera
  */
@@ -113,9 +138,21 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 //Scroll
 
-let scrollY = window.scrollY;
+let currentSection = Math.round(window.scrollY / sizes.height);
 window.addEventListener("scroll", () => {
-  scrollY = window.scrollY;
+  const newSection = Math.round(window.scrollY / sizes.height);
+  console.log(currentSection);
+  console.log(newSection);
+
+  if (currentSection !== newSection) {
+    currentSection = newSection;
+    gsap.to(sectionMeshes[currentSection].rotation, {
+      duration: 1.5,
+      ease: "power2.inOut",
+      x: "+=6",
+      y: "+=3",
+    });
+  }
 });
 
 //Mouse position
@@ -149,8 +186,8 @@ const tick = () => {
     (-parallaxY - cameraGroup.position.y) * 5 * deltaTime;
 
   sectionMeshes.forEach((mesh) => {
-    mesh.rotation.x = elapsedTime * 0.1;
-    mesh.rotation.y = elapsedTime * 0.2;
+    mesh.rotation.x += deltaTime * 0.1;
+    mesh.rotation.y += deltaTime * 0.2;
   });
 
   // Render
