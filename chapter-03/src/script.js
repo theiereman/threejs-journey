@@ -32,32 +32,22 @@ const environmentMapTexture = cubeTextureLoader.load([
   "/textures/environmentMaps/0/nz.png",
 ]);
 
-/**
- * Test sphere
- */
-const sphere = new THREE.Mesh(
-  new THREE.SphereGeometry(0.5, 32, 32),
-  new THREE.MeshStandardMaterial({
-    metalness: 0.3,
-    roughness: 0.4,
-    envMap: environmentMapTexture,
-    envMapIntensity: 0.5,
-  })
-);
-sphere.castShadow = true;
-sphere.position.y = 0.5;
-scene.add(sphere);
-
 // Physics
 const world = new CANNON.World();
 world.gravity.set(0, -9.82, 0);
 
-const sphereShape = new CANNON.Sphere(0.5);
-const sphereBody = new CANNON.Body({
-  mass: 1,
-  position: new CANNON.Vec3(0, 3, 0),
-  shape: sphereShape,
-});
+const defaultMaterial = new CANNON.Material("default");
+
+const defaultContactMaterial = new CANNON.ContactMaterial(
+  defaultMaterial,
+  defaultMaterial,
+  {
+    friction: 0.1,
+    restitution: 0.7,
+  }
+);
+world.addContactMaterial(defaultContactMaterial);
+world.defaultContactMaterial = defaultContactMaterial;
 
 const floorShape = new CANNON.Plane();
 const floorBody = new CANNON.Body({
@@ -67,7 +57,37 @@ const floorBody = new CANNON.Body({
 floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
 world.addBody(floorBody);
 
-world.add(sphereBody);
+const objectsToUpdate = [];
+
+const createSphere = (radius, position) => {
+  //ThreeJS sphere
+  const mesh = new THREE.Mesh(
+    new THREE.SphereGeometry(radius, 20, 20),
+    new THREE.MeshStandardMaterial({
+      metalness: 0.3,
+      roughness: 0.4,
+      envMap: environmentMapTexture,
+      envMapIntensity: 0.5,
+    })
+  );
+  mesh.castShadow = true;
+  mesh.position.copy(position);
+  scene.add(mesh);
+
+  //Cannon JS Mesh
+  const shape = new CANNON.Sphere(radius);
+  const body = new CANNON.Body({
+    mass: 1,
+    shape: shape,
+    material: defaultMaterial,
+    position: position,
+  });
+  world.addBody(body);
+
+  objectsToUpdate.push({ mesh, body });
+};
+
+createSphere(1, { x: 0, y: 3, z: 0 });
 
 /**
  * Floor
@@ -164,9 +184,12 @@ const tick = () => {
   const deltaTime = elapsedTime - oldElapsedTime;
   oldElapsedTime = elapsedTime;
 
+  objectsToUpdate.forEach((object) => {
+    object.mesh.position.copy(object.body.position);
+  });
+
   //Physics update
   world.step(1 / 60, deltaTime, 3);
-  sphere.position.copy(sphereBody.position);
 
   // Update controls
   controls.update();
