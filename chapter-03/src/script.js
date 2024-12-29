@@ -87,7 +87,37 @@ const createSphere = (radius, position) => {
   objectsToUpdate.push({ mesh, body });
 };
 
-createSphere(1, { x: 0, y: 3, z: 0 });
+const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
+const boxMaterial = new THREE.MeshStandardMaterial({
+  metalness: 0.3,
+  roughness: 0.4,
+  envMap: environmentMapTexture,
+  envMapIntensity: 0.5,
+});
+
+const createCube = (width, height, depth, position) => {
+  const mesh = new THREE.Mesh(boxGeometry, boxMaterial);
+  mesh.scale.set(width, height, depth);
+  mesh.castShadow = true;
+  mesh.position.copy(position);
+  scene.add(mesh);
+
+  const shape = new CANNON.Box(
+    new CANNON.Vec3(width / 2, height / 2, depth / 2)
+  );
+  const body = new CANNON.Body({
+    mass: 1,
+    shape: shape,
+    material: defaultMaterial,
+    position: position,
+  });
+  world.addBody(body);
+
+  objectsToUpdate.push({ mesh, body });
+};
+
+createCube(1, 1.5, 2, { x: 0, y: 3, z: 0 });
+// createSphere(1, { x: 0, y: 3, z: 0 });
 
 /**
  * Floor
@@ -186,6 +216,7 @@ const tick = () => {
 
   objectsToUpdate.forEach((object) => {
     object.mesh.position.copy(object.body.position);
+    object.mesh.quaternion.copy(object.body.quaternion);
   });
 
   //Physics update
