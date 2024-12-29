@@ -35,6 +35,8 @@ const environmentMapTexture = cubeTextureLoader.load([
 // Physics
 const world = new CANNON.World();
 world.gravity.set(0, -9.82, 0);
+world.broadphase = new CANNON.SAPBroadphase(world);
+world.allowSleep = true;
 
 const defaultMaterial = new CANNON.Material("default");
 
@@ -58,6 +60,17 @@ floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
 world.addBody(floorBody);
 
 const objectsToUpdate = [];
+
+//sound
+const hitSound = new Audio("/sounds/hit.mp3");
+const playHitSound = (collision) => {
+  const impactStrength = collision.contact.getImpactVelocityAlongNormal();
+  if (impactStrength < 2) return;
+
+  hitSound.volume = impactStrength Math.random();
+  hitSound.currentTime = 0;
+  hitSound.play();
+};
 
 const createSphere = (radius, position) => {
   //ThreeJS sphere
@@ -112,6 +125,8 @@ const createCube = (width, height, depth, position) => {
     position: position,
   });
   world.addBody(body);
+
+  body.addEventListener("collide", playHitSound);
 
   objectsToUpdate.push({ mesh, body });
 };
