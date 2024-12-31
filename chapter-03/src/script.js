@@ -2,7 +2,6 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import GUI from "lil-gui";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 
 /**
  * Base
@@ -16,71 +15,51 @@ const canvas = document.querySelector("canvas.webgl");
 // Scene
 const scene = new THREE.Scene();
 
-//Models
-const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath("/draco/");
+/**
+ * Objects
+ */
+const object1 = new THREE.Mesh(
+  new THREE.SphereGeometry(0.5, 16, 16),
+  new THREE.MeshBasicMaterial({ color: "#ff0000" })
+);
+object1.position.x = -2;
 
-const modelsLoader = new GLTFLoader();
-modelsLoader.setDRACOLoader(dracoLoader);
-
-let mixer = null;
-
-const duck = modelsLoader.load(
-  "/models/Fox/glTF/Fox.gltf",
-  (item) => {
-    console.log("success");
-    console.log(item);
-
-    item.scene.scale.set(0.025, 0.025, 0.025);
-    scene.add(item.scene);
-    mixer = new THREE.AnimationMixer(item.scene);
-    const survey = mixer.clipAction(item.animations[0]);
-    const walk = mixer.clipAction(item.animations[1]);
-    const run = mixer.clipAction(item.animations[2]);
-
-    survey.play();
-  },
-  (progress) => {
-    console.log(progress);
-  },
-  (error) => {
-    console.log(error);
-  }
+const object2 = new THREE.Mesh(
+  new THREE.SphereGeometry(0.5, 16, 16),
+  new THREE.MeshBasicMaterial({ color: "#ff0000" })
 );
 
-scene.add(duck);
-
-/**
- * Floor
- */
-const floor = new THREE.Mesh(
-  new THREE.PlaneGeometry(10, 10),
-  new THREE.MeshStandardMaterial({
-    color: "#444444",
-    metalness: 0,
-    roughness: 0.5,
-  })
+const object3 = new THREE.Mesh(
+  new THREE.SphereGeometry(0.5, 16, 16),
+  new THREE.MeshBasicMaterial({ color: "#ff0000" })
 );
-floor.receiveShadow = true;
-floor.rotation.x = -Math.PI * 0.5;
-scene.add(floor);
+object3.position.x = 2;
 
-/**
- * Lights
- */
-const ambientLight = new THREE.AmbientLight(0xffffff, 2.4);
+scene.add(object1, object2, object3);
+
+let gltfItem = null;
+
+const gltfLoader = new GLTFLoader();
+gltfLoader.load("/models/Duck/glTF/Duck.gltf", (data) => {
+  console.log("duck loaded");
+  gltfItem = data.scene;
+  scene.add(gltfItem);
+  data.scene.position.set(0, -2, 0);
+});
+
+//Lights
+// Ambient light
+const ambientLight = new THREE.AmbientLight("#ffffff", 0.9);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1.8);
-directionalLight.castShadow = true;
-directionalLight.shadow.mapSize.set(1024, 1024);
-directionalLight.shadow.camera.far = 15;
-directionalLight.shadow.camera.left = -7;
-directionalLight.shadow.camera.top = 7;
-directionalLight.shadow.camera.right = 7;
-directionalLight.shadow.camera.bottom = -7;
-directionalLight.position.set(5, 5, 5);
+// Directional light
+const directionalLight = new THREE.DirectionalLight("#ffffff", 2.1);
+directionalLight.position.set(1, 2, 3);
 scene.add(directionalLight);
+
+//Raycaster
+
+const raycaster = new THREE.Raycaster();
 
 /**
  * Sizes
@@ -114,12 +93,11 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   100
 );
-camera.position.set(2, 2, 2);
+camera.position.z = 3;
 scene.add(camera);
 
 // Controls
 const controls = new OrbitControls(camera, canvas);
-controls.target.set(0, 0.75, 0);
 controls.enableDamping = true;
 
 /**
@@ -128,8 +106,6 @@ controls.enableDamping = true;
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
 });
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
@@ -137,16 +113,42 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
  * Animate
  */
 const clock = new THREE.Clock();
-let previousTime = 0;
+
+const mouse = new THREE.Vector2();
+window.addEventListener("mousemove", (event) => {
+  mouse.x = (event.clientX / sizes.width) * 2 - 1;
+  mouse.y = -(event.clientY / sizes.height) * 2 + 1;
+});
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
-  const deltaTime = elapsedTime - previousTime;
-  previousTime = elapsedTime;
 
-  if (mixer) {
-    mixer.update(deltaTime);
+  object1.position.y = Math.sin(elapsedTime * 0.3);
+  object2.position.y = Math.sin(elapsedTime * 0.8);
+  object3.position.y = Math.sin(elapsedTime * 1.4);
+
+  raycaster.setFromCamera(mouse, camera);
+
+  const objectsTest = [object1, object2, object3];
+  const intersects = raycaster.intersectObjects(objectsTest);
+
+  if (gltfItem) {
+    const intersectDuck = raycaster.intersectObject(gltfItem);
+    if (intersectDuck.length > 0) {
+      gltfItem.scale.set(1.5, 1.5, 1.5);
+    } else {
+      gltfItem.scale.set(1, 1, 1);
+    }
+    console.log(intersectDuck);
   }
+
+  objectsTest.forEach((object) => {
+    object.material.color.set("red");
+  });
+
+  intersects.forEach((item) => {
+    item.object.material.color.set("blue");
+  });
 
   // Update controls
   controls.update();
