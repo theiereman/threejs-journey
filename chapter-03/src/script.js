@@ -1,138 +1,54 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import GUI from "lil-gui";
-import CANNON from "cannon";
-
-/**
- * Debug
- */
-const gui = new GUI();
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 
 /**
  * Base
  */
+// Debug
+const gui = new GUI();
+
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
 
 // Scene
 const scene = new THREE.Scene();
 
-/**
- * Textures
- */
-const textureLoader = new THREE.TextureLoader();
-const cubeTextureLoader = new THREE.CubeTextureLoader();
+//Models
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath("/draco/");
 
-const environmentMapTexture = cubeTextureLoader.load([
-  "/textures/environmentMaps/0/px.png",
-  "/textures/environmentMaps/0/nx.png",
-  "/textures/environmentMaps/0/py.png",
-  "/textures/environmentMaps/0/ny.png",
-  "/textures/environmentMaps/0/pz.png",
-  "/textures/environmentMaps/0/nz.png",
-]);
+const modelsLoader = new GLTFLoader();
+modelsLoader.setDRACOLoader(dracoLoader);
 
-// Physics
-const world = new CANNON.World();
-world.gravity.set(0, -9.82, 0);
-world.broadphase = new CANNON.SAPBroadphase(world);
-world.allowSleep = true;
+let mixer = null;
 
-const defaultMaterial = new CANNON.Material("default");
+const duck = modelsLoader.load(
+  "/models/Fox/glTF/Fox.gltf",
+  (item) => {
+    console.log("success");
+    console.log(item);
 
-const defaultContactMaterial = new CANNON.ContactMaterial(
-  defaultMaterial,
-  defaultMaterial,
-  {
-    friction: 0.1,
-    restitution: 0.7,
+    item.scene.scale.set(0.025, 0.025, 0.025);
+    scene.add(item.scene);
+    mixer = new THREE.AnimationMixer(item.scene);
+    const survey = mixer.clipAction(item.animations[0]);
+    const walk = mixer.clipAction(item.animations[1]);
+    const run = mixer.clipAction(item.animations[2]);
+
+    survey.play();
+  },
+  (progress) => {
+    console.log(progress);
+  },
+  (error) => {
+    console.log(error);
   }
 );
-world.addContactMaterial(defaultContactMaterial);
-world.defaultContactMaterial = defaultContactMaterial;
 
-const floorShape = new CANNON.Plane();
-const floorBody = new CANNON.Body({
-  mass: 0,
-  shape: floorShape,
-});
-floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
-world.addBody(floorBody);
-
-const objectsToUpdate = [];
-
-//sound
-const hitSound = new Audio("/sounds/hit.mp3");
-const playHitSound = (collision) => {
-  const impactStrength = collision.contact.getImpactVelocityAlongNormal();
-  if (impactStrength < 2) return;
-
-  hitSound.volume = impactStrength Math.random();
-  hitSound.currentTime = 0;
-  hitSound.play();
-};
-
-const createSphere = (radius, position) => {
-  //ThreeJS sphere
-  const mesh = new THREE.Mesh(
-    new THREE.SphereGeometry(radius, 20, 20),
-    new THREE.MeshStandardMaterial({
-      metalness: 0.3,
-      roughness: 0.4,
-      envMap: environmentMapTexture,
-      envMapIntensity: 0.5,
-    })
-  );
-  mesh.castShadow = true;
-  mesh.position.copy(position);
-  scene.add(mesh);
-
-  //Cannon JS Mesh
-  const shape = new CANNON.Sphere(radius);
-  const body = new CANNON.Body({
-    mass: 1,
-    shape: shape,
-    material: defaultMaterial,
-    position: position,
-  });
-  world.addBody(body);
-
-  objectsToUpdate.push({ mesh, body });
-};
-
-const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
-const boxMaterial = new THREE.MeshStandardMaterial({
-  metalness: 0.3,
-  roughness: 0.4,
-  envMap: environmentMapTexture,
-  envMapIntensity: 0.5,
-});
-
-const createCube = (width, height, depth, position) => {
-  const mesh = new THREE.Mesh(boxGeometry, boxMaterial);
-  mesh.scale.set(width, height, depth);
-  mesh.castShadow = true;
-  mesh.position.copy(position);
-  scene.add(mesh);
-
-  const shape = new CANNON.Box(
-    new CANNON.Vec3(width / 2, height / 2, depth / 2)
-  );
-  const body = new CANNON.Body({
-    mass: 1,
-    shape: shape,
-    material: defaultMaterial,
-    position: position,
-  });
-  world.addBody(body);
-
-  body.addEventListener("collide", playHitSound);
-
-  objectsToUpdate.push({ mesh, body });
-};
-
-createCube(1, 1.5, 2, { x: 0, y: 3, z: 0 });
-// createSphere(1, { x: 0, y: 3, z: 0 });
+scene.add(duck);
 
 /**
  * Floor
@@ -140,11 +56,9 @@ createCube(1, 1.5, 2, { x: 0, y: 3, z: 0 });
 const floor = new THREE.Mesh(
   new THREE.PlaneGeometry(10, 10),
   new THREE.MeshStandardMaterial({
-    color: "#777777",
-    metalness: 0.3,
-    roughness: 0.4,
-    envMap: environmentMapTexture,
-    envMapIntensity: 0.5,
+    color: "#444444",
+    metalness: 0,
+    roughness: 0.5,
   })
 );
 floor.receiveShadow = true;
@@ -154,10 +68,10 @@ scene.add(floor);
 /**
  * Lights
  */
-const ambientLight = new THREE.AmbientLight(0xffffff, 2.1);
+const ambientLight = new THREE.AmbientLight(0xffffff, 2.4);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1.8);
 directionalLight.castShadow = true;
 directionalLight.shadow.mapSize.set(1024, 1024);
 directionalLight.shadow.camera.far = 15;
@@ -200,11 +114,12 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   100
 );
-camera.position.set(-3, 3, 3);
+camera.position.set(2, 2, 2);
 scene.add(camera);
 
 // Controls
 const controls = new OrbitControls(camera, canvas);
+controls.target.set(0, 0.75, 0);
 controls.enableDamping = true;
 
 /**
@@ -222,20 +137,16 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
  * Animate
  */
 const clock = new THREE.Clock();
-let oldElapsedTime = 0;
+let previousTime = 0;
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
-  const deltaTime = elapsedTime - oldElapsedTime;
-  oldElapsedTime = elapsedTime;
+  const deltaTime = elapsedTime - previousTime;
+  previousTime = elapsedTime;
 
-  objectsToUpdate.forEach((object) => {
-    object.mesh.position.copy(object.body.position);
-    object.mesh.quaternion.copy(object.body.quaternion);
-  });
-
-  //Physics update
-  world.step(1 / 60, deltaTime, 3);
+  if (mixer) {
+    mixer.update(deltaTime);
+  }
 
   // Update controls
   controls.update();
