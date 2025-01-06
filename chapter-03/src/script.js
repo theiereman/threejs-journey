@@ -1,163 +1,144 @@
-import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import GUI from "lil-gui";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import * as THREE from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
+import GUI from 'lil-gui'
 
 /**
  * Base
  */
 // Debug
-const gui = new GUI();
+const gui = new GUI()
 
 // Canvas
-const canvas = document.querySelector("canvas.webgl");
+const canvas = document.querySelector('canvas.webgl')
 
 // Scene
-const scene = new THREE.Scene();
+const scene = new THREE.Scene()
 
 /**
- * Objects
+ * Models
  */
-const object1 = new THREE.Mesh(
-  new THREE.SphereGeometry(0.5, 16, 16),
-  new THREE.MeshBasicMaterial({ color: "#ff0000" })
-);
-object1.position.x = -2;
+const dracoLoader = new DRACOLoader()
+dracoLoader.setDecoderPath('/draco/')
 
-const object2 = new THREE.Mesh(
-  new THREE.SphereGeometry(0.5, 16, 16),
-  new THREE.MeshBasicMaterial({ color: "#ff0000" })
-);
+const gltfLoader = new GLTFLoader()
+gltfLoader.setDRACOLoader(dracoLoader)
 
-const object3 = new THREE.Mesh(
-  new THREE.SphereGeometry(0.5, 16, 16),
-  new THREE.MeshBasicMaterial({ color: "#ff0000" })
-);
-object3.position.x = 2;
+let mixer = null
 
-scene.add(object1, object2, object3);
+gltfLoader.load(
+    '/models/hamburger.glb',
+    (gltf) =>
+    {
+        scene.add(gltf.scene)
+    }
+)
 
-let gltfItem = null;
+/**
+ * Floor
+ */
+const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(50, 50),
+    new THREE.MeshStandardMaterial({
+        color: '#444444',
+        metalness: 0,
+        roughness: 0.5
+    })
+)
+floor.receiveShadow = true
+floor.rotation.x = - Math.PI * 0.5
+scene.add(floor)
 
-const gltfLoader = new GLTFLoader();
-gltfLoader.load("/models/Duck/glTF/Duck.gltf", (data) => {
-  console.log("duck loaded");
-  gltfItem = data.scene;
-  scene.add(gltfItem);
-  data.scene.position.set(0, -2, 0);
-});
+/**
+ * Lights
+ */
+const ambientLight = new THREE.AmbientLight(0xffffff, 2.4)
+scene.add(ambientLight)
 
-//Lights
-// Ambient light
-const ambientLight = new THREE.AmbientLight("#ffffff", 0.9);
-scene.add(ambientLight);
-
-// Directional light
-const directionalLight = new THREE.DirectionalLight("#ffffff", 2.1);
-directionalLight.position.set(1, 2, 3);
-scene.add(directionalLight);
-
-//Raycaster
-
-const raycaster = new THREE.Raycaster();
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1.8)
+directionalLight.castShadow = true
+directionalLight.shadow.mapSize.set(1024, 1024)
+directionalLight.shadow.camera.far = 15
+directionalLight.shadow.camera.left = - 7
+directionalLight.shadow.camera.top = 7
+directionalLight.shadow.camera.right = 7
+directionalLight.shadow.camera.bottom = - 7
+directionalLight.position.set(5, 5, 5)
+scene.add(directionalLight)
 
 /**
  * Sizes
  */
 const sizes = {
-  width: window.innerWidth,
-  height: window.innerHeight,
-};
+    width: window.innerWidth,
+    height: window.innerHeight
+}
 
-window.addEventListener("resize", () => {
-  // Update sizes
-  sizes.width = window.innerWidth;
-  sizes.height = window.innerHeight;
+window.addEventListener('resize', () =>
+{
+    // Update sizes
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
 
-  // Update camera
-  camera.aspect = sizes.width / sizes.height;
-  camera.updateProjectionMatrix();
+    // Update camera
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
 
-  // Update renderer
-  renderer.setSize(sizes.width, sizes.height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-});
+    // Update renderer
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+})
 
 /**
  * Camera
  */
 // Base camera
-const camera = new THREE.PerspectiveCamera(
-  75,
-  sizes.width / sizes.height,
-  0.1,
-  100
-);
-camera.position.z = 3;
-scene.add(camera);
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+camera.position.set(- 8, 4, 8)
+scene.add(camera)
 
 // Controls
-const controls = new OrbitControls(camera, canvas);
-controls.enableDamping = true;
+const controls = new OrbitControls(camera, canvas)
+controls.target.set(0, 1, 0)
+controls.enableDamping = true
 
 /**
  * Renderer
  */
 const renderer = new THREE.WebGLRenderer({
-  canvas: canvas,
-});
-renderer.setSize(sizes.width, sizes.height);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    canvas: canvas
+})
+renderer.shadowMap.enabled = true
+renderer.shadowMap.type = THREE.PCFSoftShadowMap
+renderer.setSize(sizes.width, sizes.height)
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
 /**
  * Animate
  */
-const clock = new THREE.Clock();
+const clock = new THREE.Clock()
+let previousTime = 0
 
-const mouse = new THREE.Vector2();
-window.addEventListener("mousemove", (event) => {
-  mouse.x = (event.clientX / sizes.width) * 2 - 1;
-  mouse.y = -(event.clientY / sizes.height) * 2 + 1;
-});
+const tick = () =>
+{
+    const elapsedTime = clock.getElapsedTime()
+    const deltaTime = elapsedTime - previousTime
+    previousTime = elapsedTime
 
-const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
-
-  object1.position.y = Math.sin(elapsedTime * 0.3);
-  object2.position.y = Math.sin(elapsedTime * 0.8);
-  object3.position.y = Math.sin(elapsedTime * 1.4);
-
-  raycaster.setFromCamera(mouse, camera);
-
-  const objectsTest = [object1, object2, object3];
-  const intersects = raycaster.intersectObjects(objectsTest);
-
-  if (gltfItem) {
-    const intersectDuck = raycaster.intersectObject(gltfItem);
-    if (intersectDuck.length > 0) {
-      gltfItem.scale.set(1.5, 1.5, 1.5);
-    } else {
-      gltfItem.scale.set(1, 1, 1);
+    if(mixer)
+    {
+        mixer.update(deltaTime)
     }
-    console.log(intersectDuck);
-  }
 
-  objectsTest.forEach((object) => {
-    object.material.color.set("red");
-  });
+    // Update controls
+    controls.update()
 
-  intersects.forEach((item) => {
-    item.object.material.color.set("blue");
-  });
+    // Render
+    renderer.render(scene, camera)
 
-  // Update controls
-  controls.update();
+    // Call tick again on the next frame
+    window.requestAnimationFrame(tick)
+}
 
-  // Render
-  renderer.render(scene, camera);
-
-  // Call tick again on the next frame
-  window.requestAnimationFrame(tick);
-};
-
-tick();
+tick()
