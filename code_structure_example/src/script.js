@@ -1,3 +1,8 @@
+import "./style.css";
+import App from "./app/App";
+
+const app = new App();
+
 // import * as THREE from 'three'
 // import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 // import GUI from 'lil-gui'
@@ -131,20 +136,7 @@
 //     height: window.innerHeight
 // }
 
-// window.addEventListener('resize', () =>
-// {
-//     // Update sizes
-//     sizes.width = window.innerWidth
-//     sizes.height = window.innerHeight
-
-//     // Update camera
-//     camera.aspect = sizes.width / sizes.height
-//     camera.updateProjectionMatrix()
-
-//     // Update renderer
-//     renderer.setSize(sizes.width, sizes.height)
-//     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-// })
+//
 
 // /**
 //  * Camera
