@@ -1,8 +1,9 @@
 import Sizes from "./utils/sizes";
 import Time from "./utils/time";
 import Camera from "./camera";
+import Renderer from "./renderer";
 
-import { Scene } from "three";
+import * as THREE from "three";
 
 declare global {
   interface Window {
@@ -13,37 +14,41 @@ declare global {
 export default class App {
   static instance: App | null = null;
 
-  canvas: HTMLCanvasElement | null;
+  canvas: HTMLCanvasElement | undefined;
   sizes: Sizes;
   time: Time;
-  scene: Scene;
+  scene: THREE.Scene;
   camera: Camera;
+  renderer: Renderer;
 
   constructor() {
-    //Singleton
-    if (App.instance) return App.instance;
-    App.instance = this;
-
     //access it from the console
     window.app = this;
 
     //Setup
-    this.canvas = document.querySelector("canvas.webgl");
+    this.canvas = document.querySelector("canvas.webgl") as HTMLCanvasElement;
     this.sizes = new Sizes();
     this.time = new Time();
-    this.scene = new Scene();
-    this.camera = new Camera();
+    this.scene = new THREE.Scene();
+    this.camera = new Camera(this);
+    this.renderer = new Renderer(this);
 
     this.sizes.addEventListener("resize", () => {
       this.resize();
     });
 
     this.time.addEventListener("tick", () => {
-      this.update();
+      this.tick();
     });
   }
 
-  resize() {}
+  resize() {
+    this.camera.onResize();
+    this.renderer.onResize();
+  }
 
-  update() {}
+  tick() {
+    this.camera.onTick();
+    this.renderer.onTick();
+  }
 }

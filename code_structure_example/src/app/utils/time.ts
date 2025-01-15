@@ -1,6 +1,7 @@
 import { EventDispatcher } from "three";
+import { EventType } from "../types/event-type";
 
-export default class Time extends EventDispatcher {
+export default class Time extends EventDispatcher<EventType> {
   start: number;
   current: number;
   delta: number;
