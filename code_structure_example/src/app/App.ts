@@ -4,6 +4,8 @@ import Camera from "./camera";
 import Renderer from "./renderer";
 
 import * as THREE from "three";
+import World from "./world/world";
+import Resources from "./utils/resources";
 
 declare global {
   interface Window {
@@ -20,6 +22,8 @@ export default class App {
   scene: THREE.Scene;
   camera: Camera;
   renderer: Renderer;
+  world: World;
+  resources: Resources;
 
   constructor() {
     //access it from the console
@@ -32,6 +36,7 @@ export default class App {
     this.scene = new THREE.Scene();
     this.camera = new Camera(this);
     this.renderer = new Renderer(this);
+    this.resources = new Resources();
 
     this.sizes.addEventListener("resize", () => {
       this.resize();
@@ -39,6 +44,10 @@ export default class App {
 
     this.time.addEventListener("tick", () => {
       this.tick();
+    });
+
+    this.resources.addEventListener("resourcesLoaded", () => {
+      this.world = new World(this);
     });
   }
 
@@ -50,5 +59,8 @@ export default class App {
   tick() {
     this.camera.onTick();
     this.renderer.onTick();
+    if (this.world) {
+      this.world.update();
+    }
   }
 }
