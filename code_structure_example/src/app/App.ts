@@ -2,6 +2,7 @@ import Sizes from "./utils/sizes";
 import Time from "./utils/time";
 import Camera from "./camera";
 import Renderer from "./renderer";
+import Debug from "./utils/debug";
 
 import * as THREE from "three";
 import World from "./world/world";
@@ -24,12 +25,14 @@ export default class App {
   renderer: Renderer;
   world: World;
   resources: Resources;
+  debug: Debug;
 
   constructor() {
     //access it from the console
     window.app = this;
 
     //Setup
+    this.debug = new Debug();
     this.canvas = document.querySelector("canvas.webgl") as HTMLCanvasElement;
     this.sizes = new Sizes();
     this.time = new Time();
