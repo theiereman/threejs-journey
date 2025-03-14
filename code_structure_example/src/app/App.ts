@@ -32,8 +32,8 @@ export default class App {
     window.app = this;
 
     //Setup
-    this.debug = new Debug();
     this.canvas = document.querySelector("canvas.webgl") as HTMLCanvasElement;
+    this.debug = new Debug();
     this.sizes = new Sizes();
     this.time = new Time();
     this.scene = new THREE.Scene();
