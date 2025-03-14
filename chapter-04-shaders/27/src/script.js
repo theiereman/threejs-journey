@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import GUI from "lil-gui";
+import testVertex from "./shaders/test/vertex.glsl";
+import testFrag from "./shaders/test/fragment.glsl";
 
 /**
  * Base
@@ -18,39 +20,38 @@ const scene = new THREE.Scene();
  * Textures
  */
 const textureLoader = new THREE.TextureLoader();
+const flagTexture = textureLoader.load("/textures/flag-french.jpg");
 
 /**
  * Test mesh
  */
 // Geometry
 const geometry = new THREE.PlaneGeometry(1, 1, 32, 32);
+console.log(geometry);
+
+const count = geometry.attributes.position.count;
+const randoms = new Float32Array(count).map(() => Math.random());
+
+geometry.setAttribute("aRandom", new THREE.BufferAttribute(randoms, 1));
 
 // Material
-const material = new THREE.RawShaderMaterial({
-  vertexShader: `
-    uniform mat4 projectionMatrix;
-    uniform mat4 viewMatrix;
-    uniform mat4 modelMatrix;
-
-    attribute vec3 position;
-
-    void main() 
-    {
-        gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
-    }
-  `,
-  fragmentShader: `
-    precision mediump float;
-
-    void main()
-    {
-        gl_FragColor = vec4(1.0,0.0,0.0,1.0);
-    }
-  `,
+const material = new THREE.ShaderMaterial({
+  vertexShader: testVertex,
+  fragmentShader: testFrag,
+  uniforms: {
+    uFrequency: { value: new THREE.Vector2(5, 7) },
+    uTime: { value: 0 },
+    uColor: { value: new THREE.Color("lightblue") },
+    uTexture: { value: flagTexture },
+  },
 });
+
+gui.add(material.uniforms.uFrequency.value, "x");
+gui.add(material.uniforms.uFrequency.value, "y");
 
 // Mesh
 const mesh = new THREE.Mesh(geometry, material);
+mesh.scale.setY(2 / 3);
 scene.add(mesh);
 
 /**
@@ -108,6 +109,8 @@ const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
+
+  material.uniforms.uTime.value = elapsedTime;
 
   // Update controls
   controls.update();
